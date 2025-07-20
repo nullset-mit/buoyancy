@@ -1,3 +1,10 @@
+# maven target dir
+/target/
+
+# emacs
+*~
+\#*\#
+
 # Compiled class file
 *.class
 
