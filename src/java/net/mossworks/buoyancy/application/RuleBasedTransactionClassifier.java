@@ -1,9 +1,10 @@
 package net.mossworks.buoyancy.application;
 
+import lombok.Getter;
 import lombok.Setter;
 import net.mossworks.buoyancy.application.dto.UnclassifiedTransaction;
 import net.mossworks.buoyancy.application.repository.ClassificationRuleRepository;
-import net.mossworks.buoyancy.application.ClassificationRule;
+import net.mossworks.buoyancy.domain.ClassificationRule;
 import net.mossworks.buoyancy.domain.Counterparty;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class RuleBasedTransactionClassifier extends TransactionClassifier {
      * The list of classification rules used to classify transactions.
      * Can be updated after construction.
      */
+    @Getter
     @Setter
     private List<ClassificationRule> rules;
 

@@ -1,6 +1,6 @@
 package net.mossworks.buoyancy.application.repository;
 
-import net.mossworks.buoyancy.application.ClassificationRule;
+import net.mossworks.buoyancy.domain.ClassificationRule;
 
 import java.util.List;
 
@@ -17,4 +17,13 @@ public interface ClassificationRuleRepository {
      * @return A list of classification rules
      */
     List<ClassificationRule> loadRules();
+
+    /**
+     * Persists a single classification rule to the repository.
+     * Implementations must reject rules whose ID already exists in the repository.
+     *
+     * @param rule The rule to write
+     * @throws IllegalArgumentException if a rule with the same ID already exists
+     */
+    void writeRule(ClassificationRule rule);
 }

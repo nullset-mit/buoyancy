@@ -35,20 +35,20 @@ A command line utility that provides a way to categorize expenses
 2. Sub-Category is saved to the database
 
 * Implementation Phases
-** Phase 1 - Hello World
+** [COMPLETE] Phase 1 - Hello World
 1. Create src/java/ directory to store source code
 2. Create command-line entrypoint to the application under the net.mossworks.buoyancy package
 3. This main class will just have a simple "hello world" message as a placeholder.
 4. Set up a maven project to build the application
 5. Add to the .gitignore files relevant to emacs, such as files ending in ~ and #
 
-** Phase 2 - Domain Classes
+** [COMPLETE] Phase 2 - Domain Classes
 1. Create the Counterparty class inside the net.mossworks.buoyancy.domain package, to the specification in the feature description
 2. Create the Category class inside the same domain package, each to the specification in the feature description
 3. Create the Transaction classes inside the same domain package.
 4. In the Transaction class, add validation to the constructor requiring all fields to exist, and validating that the amount is numeric and does not contain decimal places beyond .01
 
-** Phase 3 - Application Classes and Classifier Interface
+** [COMPLETE] Phase 3 - Application Classes and Classifier Interface
 1. Create a new package: net.mossworks.buoyancy.application.dto
 2. Create a new class inside this package, UnclassifiedTransaction, which has three fields:
    - a memo (String)
@@ -67,9 +67,21 @@ A command line utility that provides a way to categorize expenses
    This classifier should have a private List of type ClassificationRule which are passed in as part of the constructor.
    The implementation for classify should initially be blank.
 
-** Phase 4 - Transaction Classification Rule Repository
-1. Create a new interface in the net.mossworks.buoyancy.application.repository package called ClassificationRuleRepository.java. This interface defines a method called loadRules that takes no arguments and returns a List of ClassificationRule objects
-2. Create a setter for rules inside RuleBasedTransactionClassifier
-3. Add ClassificationRuleRepository as a required argument to RuleBasedTransactionClassifier, and create a method loadRules that gets the rules from the repository.
-4. 
+** [COMPLETE] Phase 4 - Transaction Classification Rule Repository
+✓ 1. Create a new interface in the net.mossworks.buoyancy.application.repository package called ClassificationRuleRepository.java. This interface defines a method called loadRules that takes no arguments and returns a List of ClassificationRule objects
+✓ 2. Create a setter for rules inside RuleBasedTransactionClassifier
+✓ 3. Add ClassificationRuleRepository as a required argument to RuleBasedTransactionClassifier, and create a method loadRules that gets the rules from the repository.
+✓ 4. Create YamlFileClassificationRuleRepository as an implementation of ClassificationRuleRepository, which reads and writes from a file.
+   The format of these files will be yaml, and the spec for each rule should match ClassificationRule.java
+   This class should have a mandatory FilePath attribute that determines where the rule I/O goes to.
+✓ 5. Implement a writeRule method on this class that writes a given rule to the output file.
+✓ 6. Write unit tests for this new class.
+
+** Phase 5 - Connect the implementation of the classifier to the implementation of the repository
+<vague>wire this to the command line</vague>
+<vague>create an integration test for the tool</vague>
+
+** Phase 6 - Documentation
+<vague>create a mkdocs.yaml file, and a docs directory</vague>
+<vague>create a clean architecture / hexagonal diagram of the system [META] Try to improve your skills at AI-assisted documentation</vague>
 

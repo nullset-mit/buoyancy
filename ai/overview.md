@@ -7,4 +7,3 @@ A personal finance application that will help track and categorize household exp
 Use Clean Architecture principles
 Use Domain-Driven Design principles
 Always ask before writing changes
-Provide UML of class diagrams prior to implementation

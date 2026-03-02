@@ -1,7 +1,7 @@
 package net.mossworks.buoyancy.infrastructure.persistence;
 
 import net.mossworks.buoyancy.application.repository.ClassificationRuleRepository;
-import net.mossworks.buoyancy.application.ClassificationRule;
+import net.mossworks.buoyancy.domain.ClassificationRule;
 import net.mossworks.buoyancy.domain.Category;
 import net.mossworks.buoyancy.domain.Counterparty;
 
@@ -35,5 +35,10 @@ public class TestClassificationRuleRepository implements ClassificationRuleRepos
         rules.add(new ClassificationRule("ELECTRIC BILL%", electricCompany, ClassificationRule.AmountType.DEBIT));
         
         return rules;
+    }
+
+    @Override
+    public void writeRule(ClassificationRule rule) {
+        // No-op for test implementation
     }
 }

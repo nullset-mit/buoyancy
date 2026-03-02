@@ -1,4 +1,4 @@
-package net.mossworks.buoyancy.application;
+package net.mossworks.buoyancy.domain;
 
 import lombok.Getter;
 
