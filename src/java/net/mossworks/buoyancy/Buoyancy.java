@@ -1,15 +1,35 @@
 package net.mossworks.buoyancy;
 
+import net.mossworks.buoyancy.adapter.cli.CommandLineInputAdapter;
+import net.mossworks.buoyancy.application.CategorizationUseCase;
+import net.mossworks.buoyancy.application.RuleBasedTransactionClassifier;
+import net.mossworks.buoyancy.infrastructure.persistence.YamlFileClassificationRuleRepository;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
- * Main entry point for the Buoyancy personal finance application.
+ * Composition root for the Buoyancy personal finance application.
+ * Wires all components and delegates to the appropriate input adapter.
  */
 public class Buoyancy {
-    
-    /**
-     * Main method that serves as the entry point for the application.
-     * @param args Command line arguments
-     */
+
     public static void main(String[] args) {
-        System.out.println("Hello World! Welcome to Buoyancy - Personal Finance Application");
+	// this is hard-coded for now, but depends on the classifier,
+	// and should be configurable at runtime
+        Path rulesPath = Paths.get(System.getProperty("user.home"), ".buoyancy", "rules.yaml");
+
+        YamlFileClassificationRuleRepository repo =
+            new YamlFileClassificationRuleRepository(rulesPath);
+
+        RuleBasedTransactionClassifier classifier =
+            new RuleBasedTransactionClassifier(repo);
+        classifier.loadRules();
+
+        CategorizationUseCase useCase = new CategorizationUseCase(classifier);
+
+        CommandLineInputAdapter adapter =
+            new CommandLineInputAdapter(useCase, args, System.out);
+        adapter.run();
     }
 }
