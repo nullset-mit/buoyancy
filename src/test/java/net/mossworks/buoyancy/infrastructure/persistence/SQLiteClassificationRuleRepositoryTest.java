@@ -1,5 +1,7 @@
 package net.mossworks.buoyancy.infrastructure.persistence;
 
+import net.mossworks.buoyancy.application.DuplicateCategoryException;
+import net.mossworks.buoyancy.application.DuplicateCounterpartyException;
 import net.mossworks.buoyancy.domain.Category;
 import net.mossworks.buoyancy.domain.ClassificationRule;
 import net.mossworks.buoyancy.domain.Counterparty;
@@ -26,7 +28,7 @@ public class SQLiteClassificationRuleRepositoryTest {
 
     private ClassificationRule sampleRule(String memoPattern) {
         Category category = new Category("Groceries");
-        Counterparty counterparty = new Counterparty("Grocery Store", category);
+        Counterparty counterparty = new Counterparty("Store-" + memoPattern, category);
         return new ClassificationRule(memoPattern, counterparty, ClassificationRule.AmountType.DEBIT);
     }
 
@@ -139,7 +141,97 @@ public class SQLiteClassificationRuleRepositoryTest {
     void writeCategory_throwsException_onDuplicateId() {
         Category category = new Category("Shopping");
         repo.writeCategory(category);
-        assertThrows(IllegalArgumentException.class, () -> repo.writeCategory(category));
+        assertThrows(DuplicateCategoryException.class, () -> repo.writeCategory(category));
+    }
+
+    @Test
+    void writeCategory_throwsException_onDuplicateName_caseInsensitive() {
+        repo.writeCategory(new Category("Shopping"));
+        assertThrows(DuplicateCategoryException.class, () -> repo.writeCategory(new Category("shopping")));
+    }
+
+    @Test
+    void writeRule_reusesCategoryByName_caseInsensitive() {
+        Category cat1 = new Category("Groceries");
+        Counterparty cp1 = new Counterparty("Store A", cat1);
+        ClassificationRule rule1 = new ClassificationRule("STOREA%", cp1, ClassificationRule.AmountType.DEBIT);
+        repo.writeRule(rule1);
+
+        Category cat2 = new Category("groceries");
+        Counterparty cp2 = new Counterparty("Store B", cat2);
+        ClassificationRule rule2 = new ClassificationRule("STOREB%", cp2, ClassificationRule.AmountType.DEBIT);
+        repo.writeRule(rule2);
+
+        List<ClassificationRule> loaded = repo.loadRules();
+        assertEquals(2, loaded.size());
+        assertEquals(loaded.get(0).getCategory().getId(), loaded.get(1).getCategory().getId());
+    }
+
+    @Test
+    void listCategories_returnsEmptyList_whenNoCategoriesExist() {
+        assertTrue(repo.listCategories().isEmpty());
+    }
+
+    @Test
+    void listCategories_returnsAllCategories_orderedByName() {
+        repo.writeCategory(new Category("Groceries"));
+        repo.writeCategory(new Category("Entertainment"));
+        repo.writeCategory(new Category("Shopping"));
+
+        List<Category> result = repo.listCategories();
+        assertEquals(3, result.size());
+        assertEquals("Entertainment", result.get(0).getName());
+        assertEquals("Groceries", result.get(1).getName());
+        assertEquals("Shopping", result.get(2).getName());
+    }
+
+    @Test
+    void writeCounterparty_insertsCounterparty() {
+        Category category = new Category("Groceries");
+        repo.writeCategory(category);
+        Counterparty cp = new Counterparty("Walmart", category);
+        assertDoesNotThrow(() -> repo.writeCounterparty(cp));
+    }
+
+    @Test
+    void writeCounterparty_throwsOnDuplicateName() {
+        Category category = new Category("Groceries");
+        repo.writeCategory(category);
+        repo.writeCounterparty(new Counterparty("Walmart", category));
+        assertThrows(DuplicateCounterpartyException.class,
+            () -> repo.writeCounterparty(new Counterparty("walmart", category)));
+    }
+
+    @Test
+    void listCounterpartiesByCategory_returnsMatchingCounterparties() {
+        Category groceries = new Category("Groceries");
+        Category shopping  = new Category("Shopping");
+        repo.writeCategory(groceries);
+        repo.writeCategory(shopping);
+        Counterparty walmart  = new Counterparty("Walmart", groceries);
+        Counterparty target   = new Counterparty("Target", shopping);
+        Counterparty kroger   = new Counterparty("Kroger", groceries);
+        repo.writeCounterparty(walmart);
+        repo.writeCounterparty(target);
+        repo.writeCounterparty(kroger);
+
+        List<Counterparty> result = repo.listCounterpartiesByCategory(groceries);
+        assertEquals(2, result.size());
+        List<String> names = result.stream().map(Counterparty::getName).toList();
+        assertTrue(names.contains("Walmart"));
+        assertTrue(names.contains("Kroger"));
+    }
+
+    @Test
+    void listCounterpartiesByCategory_returnsEmptyWhenNoneMatch() {
+        Category groceries = new Category("Groceries");
+        Category shopping  = new Category("Shopping");
+        repo.writeCategory(groceries);
+        repo.writeCategory(shopping);
+        repo.writeCounterparty(new Counterparty("Target", shopping));
+
+        List<Counterparty> result = repo.listCounterpartiesByCategory(groceries);
+        assertTrue(result.isEmpty());
     }
 
     @Test

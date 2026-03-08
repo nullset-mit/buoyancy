@@ -24,3 +24,14 @@ Likewise, the user may annotate the plan file with corrections or updates. The p
 - Any deviations from the feature spec, with justification
 
 Raw code should not appear in plan files — it can be read from the source on demand.
+
+## Style Guide
+No 'cuddled' else statements:
+...
+} else {
+...
+We should instead have this:
+...
+}
+else {
+...

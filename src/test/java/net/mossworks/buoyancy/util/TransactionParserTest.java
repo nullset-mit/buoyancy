@@ -1,4 +1,4 @@
-package net.mossworks.buoyancy.adapter.cli.classify;
+package net.mossworks.buoyancy.util;
 
 import net.mossworks.buoyancy.application.dto.UnclassifiedTransaction;
 import org.junit.jupiter.api.Test;

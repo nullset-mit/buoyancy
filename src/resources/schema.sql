@@ -4,12 +4,18 @@ CREATE TABLE IF NOT EXISTS category (
     sub_category TEXT
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_category_name_unique
+    ON category (LOWER(name));
+
 CREATE TABLE IF NOT EXISTS counterparty (
     id                  TEXT PRIMARY KEY,
     name                TEXT NOT NULL,
     default_category_id TEXT NOT NULL,
     FOREIGN KEY (default_category_id) REFERENCES category(id)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_counterparty_name_unique
+    ON counterparty (LOWER(name));
 
 CREATE TABLE IF NOT EXISTS classification_rule (
     id               TEXT PRIMARY KEY,

@@ -1,35 +1,32 @@
 package net.mossworks.buoyancy.adapter.cli;
 
 import net.mossworks.buoyancy.adapter.cli.classify.ClassifyController;
+import org.jline.terminal.Terminal;
 
-import java.io.PrintStream;
-import java.util.Scanner;
+public class MainMenuController extends AbstractController {
 
-public class MainMenuController {
-
-    private final PrintStream out;
-    private final Scanner in;
     private final ClassifyController classifyController;
 
-    public MainMenuController(PrintStream out, Scanner in, ClassifyController classifyController) {
-        this.out = out;
-        this.in = in;
+    public MainMenuController(Terminal terminal, ClassifyController classifyController) {
+        super(terminal);
         this.classifyController = classifyController;
     }
 
     public void run() {
         while (true) {
-            out.println();
-            out.println("What would you like to do?");
-            out.println("  1. Classify a transaction");
-            out.println("  2. Exit");
-            out.print("> ");
+            terminal.writer().println();
+            terminal.writer().println("What would you like to do?");
+            terminal.writer().println("  1. Classify a transaction");
+            terminal.writer().println("  2. Exit");
+            terminal.writer().print("> ");
+            terminal.writer().flush();
 
-            String choice = in.nextLine().trim();
-            switch (choice) {
+            String choice = readLine();
+            if (choice == null) return; // EOF
+            switch (choice.trim()) {
                 case "1" -> classifyController.run();
                 case "2" -> { return; }
-                default  -> out.println("Unknown option: " + choice);
+                default  -> terminal.writer().println("Unknown option: " + choice.trim());
             }
         }
     }

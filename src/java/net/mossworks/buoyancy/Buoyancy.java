@@ -7,14 +7,16 @@ import net.mossworks.buoyancy.application.CategorizationUseCase;
 import net.mossworks.buoyancy.application.RuleBasedTransactionClassifier;
 import net.mossworks.buoyancy.application.RuleCreationUseCase;
 import net.mossworks.buoyancy.infrastructure.persistence.SQLiteClassificationRuleRepository;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Scanner;
 
 public class Buoyancy {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Path dbPath = Paths.get(System.getProperty("user.home"), ".buoyancy", "buoyancy.db");
 
         SQLiteClassificationRuleRepository repo = new SQLiteClassificationRuleRepository(dbPath);
@@ -23,15 +25,15 @@ public class Buoyancy {
         classifier.loadRules();
 
         CategorizationUseCase categorizationUseCase = new CategorizationUseCase(classifier);
-        RuleCreationUseCase ruleCreationUseCase = new RuleCreationUseCase(repo);
+        RuleCreationUseCase ruleCreationUseCase = new RuleCreationUseCase(repo, repo);
 
-        Scanner scanner = new Scanner(System.in);
+        Terminal terminal = TerminalBuilder.builder().system(true).build();
 
         ClassifyController classifyController =
-            new ClassifyController(System.out, scanner, categorizationUseCase, ruleCreationUseCase);
+            new ClassifyController(terminal, categorizationUseCase, ruleCreationUseCase);
         MainMenuController mainMenuController =
-            new MainMenuController(System.out, scanner, classifyController);
-        AppShell shell = new AppShell(System.out, mainMenuController);
+            new MainMenuController(terminal, classifyController);
+        AppShell shell = new AppShell(terminal, mainMenuController);
 
         shell.run();
     }

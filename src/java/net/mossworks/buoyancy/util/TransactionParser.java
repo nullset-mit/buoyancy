@@ -1,4 +1,4 @@
-package net.mossworks.buoyancy.adapter.cli.classify;
+package net.mossworks.buoyancy.util;
 
 import net.mossworks.buoyancy.application.dto.UnclassifiedTransaction;
 
@@ -27,7 +27,8 @@ public class TransactionParser {
         LocalDate date;
         try {
             date = LocalDate.parse(tokens[0], DATE_FORMAT);
-        } catch (DateTimeParseException e) {
+        }
+        catch (DateTimeParseException e) {
             throw new IllegalArgumentException(
                 "Invalid date '" + tokens[0] + "': expected mm/dd/yyyy");
         }
@@ -35,7 +36,8 @@ public class TransactionParser {
         BigDecimal amount;
         try {
             amount = new BigDecimal(tokens[tokens.length - 1]);
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e) {
             throw new IllegalArgumentException(
                 "Invalid amount '" + tokens[tokens.length - 1] + "': must be a number");
         }

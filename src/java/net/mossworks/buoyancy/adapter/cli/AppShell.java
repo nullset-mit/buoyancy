@@ -1,20 +1,28 @@
 package net.mossworks.buoyancy.adapter.cli;
 
-import java.io.PrintStream;
+import org.jline.terminal.Terminal;
 
+/**
+ * AppShell
+ *
+ * This class application lifecycle (startup, shutdown) and delegates further interaction to the top-level controller (currently MainMenuController)
+ *
+ **/
 public class AppShell {
 
-    private final PrintStream out;
+    private final Terminal terminal;
     private final MainMenuController mainMenuController;
 
-    public AppShell(PrintStream out, MainMenuController mainMenuController) {
-        this.out = out;
+    public AppShell(Terminal terminal, MainMenuController mainMenuController) {
+        this.terminal = terminal;
         this.mainMenuController = mainMenuController;
     }
 
     public void run() {
-        out.println("Welcome to Buoyancy.");
+        terminal.writer().println("Welcome to Buoyancy.");
+        terminal.writer().flush();
         mainMenuController.run();
-        out.println("Goodbye.");
+        terminal.writer().println("Goodbye.");
+        terminal.writer().flush();
     }
 }

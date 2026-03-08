@@ -1,7 +1,10 @@
 package net.mossworks.buoyancy.infrastructure.persistence;
 
+import net.mossworks.buoyancy.application.DuplicateCategoryException;
+import net.mossworks.buoyancy.application.DuplicateCounterpartyException;
 import net.mossworks.buoyancy.application.repository.CategoryRepository;
 import net.mossworks.buoyancy.application.repository.ClassificationRuleRepository;
+import net.mossworks.buoyancy.application.repository.CounterpartyRepository;
 import net.mossworks.buoyancy.domain.Category;
 import net.mossworks.buoyancy.domain.ClassificationRule;
 import net.mossworks.buoyancy.domain.Counterparty;
@@ -23,7 +26,7 @@ import java.util.UUID;
 
 import static net.mossworks.buoyancy.infrastructure.persistence.BuoyancySchema.*;
 
-public class SQLiteClassificationRuleRepository implements ClassificationRuleRepository, CategoryRepository {
+public class SQLiteClassificationRuleRepository implements ClassificationRuleRepository, CategoryRepository, CounterpartyRepository {
 
     private final Connection connection;
     private final DSLContext dsl;
@@ -49,6 +52,8 @@ public class SQLiteClassificationRuleRepository implements ClassificationRuleRep
     }
 
     private DSLContext createDslContext(Connection connection) {
+        System.setProperty("org.jooq.no-logo", "true");
+        System.setProperty("org.jooq.no-tips", "true");
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("PRAGMA foreign_keys = ON");
         } catch (SQLException e) {
@@ -97,8 +102,8 @@ public class SQLiteClassificationRuleRepository implements ClassificationRuleRep
         }
         dsl.transaction(txConfig -> {
             DSLContext tx = DSL.using(txConfig);
-            ensureCategoryExists(tx, rule.getCategory());
-            ensureCounterpartyExists(tx, rule.getCounterparty());
+            String categoryId = ensureCategoryExists(tx, rule.getCategory());
+            ensureCounterpartyExists(tx, rule.getCounterparty(), categoryId);
             tx.insertInto(CLASSIFICATION_RULE)
                 .set(RULE_ID, rule.getId().toString())
                 .set(RULE_MEMO_PATTERN, rule.getMemoPattern())
@@ -111,11 +116,11 @@ public class SQLiteClassificationRuleRepository implements ClassificationRuleRep
 
     @Override
     public void writeCategory(Category category) {
-        boolean exists = dsl.fetchExists(
-            dsl.selectFrom(CATEGORY).where(CATEGORY_ID.eq(category.getId().toString()))
+        boolean nameExists = dsl.fetchExists(
+            dsl.selectFrom(CATEGORY).where(DSL.lower(CATEGORY_NAME).eq(category.getName().toLowerCase()))
         );
-        if (exists) {
-            throw new IllegalArgumentException("Category with ID " + category.getId() + " already exists");
+        if (nameExists) {
+            throw new DuplicateCategoryException(category.getName());
         }
         dsl.insertInto(CATEGORY)
             .set(CATEGORY_ID, category.getId().toString())
@@ -124,20 +129,78 @@ public class SQLiteClassificationRuleRepository implements ClassificationRuleRep
             .execute();
     }
 
-    private void ensureCategoryExists(DSLContext tx, Category category) {
+    @Override
+    public List<Category> listCategories() {
+        return dsl.selectFrom(CATEGORY)
+            .orderBy(CATEGORY_NAME)
+            .fetch()
+            .stream()
+            .map(r -> new Category(
+                UUID.fromString(r.get(CATEGORY_ID)),
+                r.get(CATEGORY_NAME),
+                r.get(CATEGORY_SUB_CATEGORY)))
+            .toList();
+    }
+
+    @Override
+    public void writeCounterparty(Counterparty counterparty) {
+        boolean nameExists = dsl.fetchExists(
+            dsl.selectFrom(COUNTERPARTY)
+                .where(DSL.lower(COUNTERPARTY_NAME).eq(counterparty.getName().toLowerCase()))
+        );
+        if (nameExists) {
+            throw new DuplicateCounterpartyException(counterparty.getName());
+        }
+        dsl.insertInto(COUNTERPARTY)
+            .set(COUNTERPARTY_ID, counterparty.getId().toString())
+            .set(COUNTERPARTY_NAME, counterparty.getName())
+            .set(COUNTERPARTY_DEFAULT_CATEGORY_ID, counterparty.getDefaultCategory().getId().toString())
+            .execute();
+    }
+
+    @Override
+    public List<Counterparty> listCounterpartiesByCategory(Category category) {
+        return dsl
+            .select()
+            .from(COUNTERPARTY)
+            .join(CATEGORY).on(COUNTERPARTY_DEFAULT_CATEGORY_ID.eq(CATEGORY_ID))
+            .where(DSL.lower(CATEGORY_NAME).eq(category.getName().toLowerCase()))
+            .orderBy(COUNTERPARTY_NAME)
+            .fetch()
+            .stream()
+            .map(r -> {
+                UUID catId = UUID.fromString(r.get(CATEGORY_ID));
+                String catName = r.get(CATEGORY_NAME);
+                String subCategory = r.get(CATEGORY_SUB_CATEGORY);
+                Category cat = new Category(catId, catName, subCategory);
+                UUID cpId = UUID.fromString(r.get(COUNTERPARTY_ID));
+                String cpName = r.get(COUNTERPARTY_NAME);
+                return new Counterparty(cpId, cpName, cat);
+            })
+            .toList();
+    }
+
+    private String ensureCategoryExists(DSLContext tx, Category category) {
+        String existingId = tx.select(CATEGORY_ID)
+            .from(CATEGORY)
+            .where(DSL.lower(CATEGORY_NAME).eq(category.getName().toLowerCase()))
+            .fetchOne(CATEGORY_ID);
+        if (existingId != null) {
+            return existingId;
+        }
         tx.insertInto(CATEGORY)
             .set(CATEGORY_ID, category.getId().toString())
             .set(CATEGORY_NAME, category.getName())
             .set(CATEGORY_SUB_CATEGORY, category.getSubCategory())
-            .onDuplicateKeyIgnore()
             .execute();
+        return category.getId().toString();
     }
 
-    private void ensureCounterpartyExists(DSLContext tx, Counterparty counterparty) {
+    private void ensureCounterpartyExists(DSLContext tx, Counterparty counterparty, String categoryId) {
         tx.insertInto(COUNTERPARTY)
             .set(COUNTERPARTY_ID, counterparty.getId().toString())
             .set(COUNTERPARTY_NAME, counterparty.getName())
-            .set(COUNTERPARTY_DEFAULT_CATEGORY_ID, counterparty.getDefaultCategory().getId().toString())
+            .set(COUNTERPARTY_DEFAULT_CATEGORY_ID, categoryId)
             .onDuplicateKeyIgnore()
             .execute();
     }
